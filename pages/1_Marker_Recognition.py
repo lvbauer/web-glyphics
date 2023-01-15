@@ -36,7 +36,6 @@ def main():
     user_image = st.file_uploader("Picture to analyze:", type=["png","jpg","tiff", "tif","jpeg"], accept_multiple_files=False, key="file_uploader")
     user_dictionary = st.selectbox("Choose marker dictionary:", ARUCO_DICT.keys())
 
-
     if (user_image is not None):
         
         # Load file into array using PIL
@@ -52,7 +51,6 @@ def main():
         active_dict = cv2.aruco.Dictionary_get(ARUCO_DICT[user_dictionary])
         aruco_params = cv2.aruco.DetectorParameters_create()
         corners, ids, rejected_points = cv2.aruco.detectMarkers(img, active_dict, parameters=aruco_params)
-
 
         # Draw markers and show annotated image
         img_copy = np.copy(img)
