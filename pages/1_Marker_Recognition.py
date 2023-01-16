@@ -3,6 +3,9 @@ import cv2
 import numpy as np
 from PIL import Image
 
+# Set page name
+st.set_page_config(page_title="Marker Recognition")
+
 # define names of each possible ArUco tag OpenCV supports
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
@@ -41,8 +44,7 @@ def main():
         # Load file into array using PIL
         img = Image.open(user_image)
         img = np.array(img)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        
+
         # Original image display
         st.header("Original Image")
         st.image(img)
@@ -60,7 +62,7 @@ def main():
         st.header("Annotated Image")
         st.image(img_copy)
 
-        if (ids == None):
+        if (ids is None):
             st.warning(f"No markers detected in '{user_image.name}'.")
             st.stop()
 
