@@ -34,9 +34,22 @@ ARUCO_DICT = {
 def main():
 
     st.title(":mag_right: Visualize Markers")
-
     st.header("Image Upload")
-    user_image = st.file_uploader("Picture to analyze:", type=["png","jpg","tiff", "tif","jpeg"], accept_multiple_files=False, key="file_uploader")
+
+    # Create tabs for upload images or using camera
+    input1, input2 = st.tabs(["Upload Image", "Use Camera"])
+    with input1:
+        user_image_upload = st.file_uploader("Picture to analyze:", type=["png","jpg","tiff", "tif","jpeg"], accept_multiple_files=False, key="file_uploader")
+    with input2:    
+        user_image_camera = st.camera_input("Use Device Camera")
+
+    # Give priority to uploaded images
+    if (user_image_upload is not None):
+        user_image = user_image_upload
+    else:
+        user_image = user_image_camera
+
+    st.subheader("Select Dictionary")
     user_dictionary = st.selectbox("Choose marker dictionary:", ARUCO_DICT.keys())
 
     if (user_image is not None):

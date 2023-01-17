@@ -38,7 +38,22 @@ def main():
     st.title("Adjust Image")
 
     st.header("Image Upload")
-    user_image = st.file_uploader("Picture to analyze:", type=["png","jpg","tiff", "tif","jpeg"], accept_multiple_files=False, key="file_uploader")
+    
+    # Create tabs for upload images or using camera
+    input1, input2 = st.tabs(["Upload Image", "Use Camera"])
+    with input1:
+        user_image_upload = st.file_uploader("Picture to analyze:", type=["png","jpg","tiff", "tif","jpeg"], accept_multiple_files=False, key="file_uploader")
+    with input2:    
+        user_image_camera = st.camera_input("Use Device Camera")
+
+    # Give priority to uploaded images
+    if (user_image_upload is not None):
+        user_image = user_image_upload
+    else:
+        user_image = user_image_camera    
+        
+    st.subheader("Adjustment Settings")
+    # User inputs
     user_dictionary = st.selectbox("Choose marker dictionary:", ARUCO_DICT.keys())
     user_correction_method = st.selectbox("Choose correction method:", METHODS)
 
@@ -53,11 +68,9 @@ def main():
         st.stop()
 
     col1, col2 = st.columns(2)
-
     with col1:
         user_cardinal_pt = st.number_input("Choose ID number of cardinal point:", min_value=0, max_value=dictionary_num_value-1, step=1, value=0)
         user_other_pt = st.number_input("Choose ID number of other points:", min_value=0, max_value=dictionary_num_value-1, step=1, value=1)
-    
     with col2:
         user_rotation_value = st.selectbox("Choose counterclockwise rotation value:", options=[0,1,2,3,4], format_func=lambda x : x*90)
         user_inset_value = st.number_input("Choose inset: (px)", min_value=0, max_value=1500, step=1)
