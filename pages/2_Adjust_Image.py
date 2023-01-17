@@ -106,7 +106,7 @@ def main():
         if user_correction_method.upper() == "RECTANGLE":
             adj_img = adj.expand_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         elif user_correction_method.upper() == "SQUARE":
-            adj_img = adj.square_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value)
+            adj_img = adj.square_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         
         # Display adjusted image
         st.header("Adjusted Image")

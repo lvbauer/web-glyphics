@@ -155,7 +155,7 @@ def expand_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
 	# Keystone image and return
 	return keystone_correct(image, order_point_list, dest_points)
 
-def square_correct_image(image, card_id=0, normal_id=1, rotation=0):
+def square_correct_image(image, card_id=0, normal_id=1, rotation=0, inset=0):
 	"""
 	Wholistic function to correct image to a expanded view
 	"""
@@ -183,10 +183,10 @@ def square_correct_image(image, card_id=0, normal_id=1, rotation=0):
 		pad_length = (x_len - y_len) // 2
 
 		dest_points = [
-			(pad_length,0),
-			(x_len-pad_length,0),
-			(x_len-pad_length,y_len),
-			(pad_length,y_len),
+			(pad_length+inset,inset),
+			(x_len-pad_length-inset,inset),
+			(x_len-pad_length-inset,y_len-inset),
+			(pad_length+inset,y_len-inset),
 		]
 	
 	# Portrait image
@@ -194,10 +194,10 @@ def square_correct_image(image, card_id=0, normal_id=1, rotation=0):
 		pad_length = (y_len - x_len) // 2
 
 		dest_points = [
-			(0,pad_length),
-			(x_len,pad_length),
-			(x_len,y_len-pad_length),
-			(0,y_len-pad_length),
+			(inset,pad_length+inset),
+			(x_len-inset,pad_length+inset),
+			(x_len-inset,y_len-pad_length-inset),
+			(inset,y_len-pad_length-inset),
 		]
 	
 	# Keystone image and return
