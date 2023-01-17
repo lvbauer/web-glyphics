@@ -29,6 +29,10 @@ ARUCO_DICT = {
 	"DICT_APRILTAG_36h11": cv2.aruco.DICT_APRILTAG_36h11
 }
 
+METHODS = [
+    "RECTANGLE",
+    "SQUARE"
+]
 
 def main():
     st.title("Adjust Image")
@@ -36,6 +40,7 @@ def main():
     st.header("Image Upload")
     user_image = st.file_uploader("Picture to analyze:", type=["png","jpg","tiff", "tif","jpeg"], accept_multiple_files=False, key="file_uploader")
     user_dictionary = st.selectbox("Choose marker dictionary:", ARUCO_DICT.keys())
+    user_correction_method = st.selectbox("Choose correction method:", METHODS)
 
     # Calculate number of 
     dictionary_num_value = user_dictionary.split("_")[-1]
@@ -85,8 +90,13 @@ def main():
             st.stop()
 
         # Apply transformation to the image
+        if user_correction_method.upper() == "RECTANGLE":
+            adj_img = adj.expand_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+        elif user_correction_method.upper() == "SQUARE":
+            adj_img = adj.square_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value)
+        
+        # Display adjusted image
         st.header("Adjusted Image")
-        adj_img = adj.expand_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         st.image(adj_img)
 
 if __name__ == '__main__':

@@ -154,3 +154,37 @@ def expand_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
 	
 	# Keystone image and return
 	return keystone_correct(image, order_point_list, dest_points)
+
+def square_correct_image(image, card_id=0, normal_id=1, rotation=0):
+	"""
+	Wholistic function to correct image to a expanded view
+	"""
+	
+	# Load dictionary and detect markers
+	arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+	arucoParams = cv2.aruco.DetectorParameters_create()
+	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
+
+	# Get points from corners
+	points = get_aruco_points(corners)
+	
+	# Order points (Find source points)
+	order_point_list = order_aruco_clockwise(ids, points, card_id=card_id, normal_id=normal_id)
+	
+	# Rotate correction if specified
+	if rotation > 0:
+		order_point_list = rotate_list(order_point_list, rotation, len(order_point_list))
+	
+	# Calculate destination points
+	y_len, x_len, z_len = image.shape
+	pad_length = (x_len - y_len) // 2
+
+	dest_points = [
+		(pad_length,0),
+		(x_len-pad_length,0),
+		(x_len-pad_length,y_len),
+		(pad_length,y_len),
+	]
+	
+	# Keystone image and return
+	return keystone_correct(image, order_point_list, dest_points)
