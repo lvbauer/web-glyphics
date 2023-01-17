@@ -178,6 +178,7 @@ def square_correct_image(image, card_id=0, normal_id=1, rotation=0):
 	# Calculate destination points
 	y_len, x_len, z_len = image.shape
 
+	# Landscape image
 	if (x_len >= y_len):
 		pad_length = (x_len - y_len) // 2
 
@@ -188,6 +189,7 @@ def square_correct_image(image, card_id=0, normal_id=1, rotation=0):
 			(pad_length,y_len),
 		]
 	
+	# Portrait image
 	elif (x_len < y_len):
 		pad_length = (y_len - x_len) // 2
 
