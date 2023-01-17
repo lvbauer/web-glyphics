@@ -54,8 +54,9 @@ def main():
         user_other_pt = st.number_input("Choose ID number of other points:", min_value=0, max_value=dictionary_num_value-1, step=1, value=1)
     
     with col2:
-        user_rotation_value = st.selectbox("Choose rotation value:", options=[0,1,2,3,4], format_func=lambda x : x*90)
+        user_rotation_value = st.selectbox("Choose counterclockwise rotation value:", options=[0,1,2,3,4], format_func=lambda x : x*90)
         user_inset_value = st.number_input("Choose inset: (px)", min_value=0, max_value=1500, step=1)
+    
 
     if (user_cardinal_pt == user_other_pt):
         st.warning("Point designations cannot be equal. Choose different values for marker ID.")

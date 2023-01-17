@@ -28,6 +28,7 @@ def get_aruco_points(marker_corners):
 def angle_between_points(p1, p2):
 	"""
 	Calculates clockwise angle between points in left-hand coordinate system
+	Origin is the corner point
 	"""
 	
 	d1 = p2[0] - p1[0]
@@ -48,6 +49,14 @@ def angle_between_points(p1, p2):
 			deg += 90
 	return deg
 
+def angle_points_centroid(p1, p2, centroid):
+	"""Calculates angle p1-centroid-p2 in radians
+	"""
+	v0 = np.array(p1) - np.array(centroid)
+	v1 = np.array(p2) - np.array(centroid)
+	angle = np.math.atan2(np.linalg.det([v0,v1]),np.dot(v0,v1))
+	return angle
+
 def order_aruco_clockwise(ids, marker_centers, card_id=0, normal_id=1):
 	"""Calculates a clockwise-ordered marker center points
 	Returns list which starts with the cardinal market and progresses clockwise about marker centroid
@@ -60,10 +69,8 @@ def order_aruco_clockwise(ids, marker_centers, card_id=0, normal_id=1):
 	# Get centroid
 	centroid = []
 	num_markers = len(marker_centers)
-	#print(marker_centers)
 	for axis in range(2):
 		axis_sum = sum([point[axis] for point in marker_centers])
-		#print(axis_sum)
 		axis_mean = int(axis_sum//num_markers)
 		centroid.append(axis_mean)
 	centroid = tuple(centroid)
@@ -74,9 +81,9 @@ def order_aruco_clockwise(ids, marker_centers, card_id=0, normal_id=1):
 			card_id = marker_id
 			card_pt = point
 			break
-						
+
 	# Find point order
-	angle_sort_list = sorted([point for marker_id, point in point_id_list if ((marker_id != card_id) and (marker_id == normal_id))], key=lambda x: angle_between_points(card_pt, x))
+	angle_sort_list = sorted([point for marker_id, point in point_id_list if ((marker_id != card_id) and (marker_id == normal_id))], key=lambda x: angle_points_centroid(card_pt, centroid, x))
 	angle_sort_list.insert(0, card_pt)
 	return angle_sort_list
 	
@@ -130,8 +137,8 @@ def expand_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
 	
 	# Order points (Find source points)
 	order_point_list = order_aruco_clockwise(ids, points, card_id=card_id, normal_id=normal_id)
-	#print(order_point_list)
 	
+	# Rotate correction if specified
 	if rotation > 0:
 		order_point_list = rotate_list(order_point_list, rotation, len(order_point_list))
 	
@@ -140,13 +147,10 @@ def expand_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
 	
 	dest_points = [
 		(0+inset,0+inset),
-		(0+inset,y_len-inset),
 		(x_len-inset,0+inset),
 		(x_len-inset,y_len-inset),
+		(0+inset,y_len-inset),
 	]
 	
-	#print(dest_points)
-
 	# Keystone image and return
 	return keystone_correct(image, order_point_list, dest_points)
-
