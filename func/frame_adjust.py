@@ -1,7 +1,7 @@
 import cv2
 import math
-import sys, os
 import numpy as np
+from statistics import mean
 
 
 def get_aruco_points(marker_corners):
@@ -199,6 +199,70 @@ def square_correct_image(image, card_id=0, normal_id=1, rotation=0, inset=0):
 			(x_len-inset,y_len-pad_length-inset),
 			(inset,y_len-pad_length-inset),
 		]
+	
+	# Keystone image and return
+	return keystone_correct(image, order_point_list, dest_points)
+
+def maintain_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
+	"""
+	Wholistic function to correct image to a squared version of its original size
+	"""
+	
+	# Load dictionary and detect markers
+	arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+	arucoParams = cv2.aruco.DetectorParameters_create()
+	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
+
+	# Get points from corners
+	points = get_aruco_points(corners)
+	
+	# Order points (Find source points)
+	order_point_list = order_aruco_clockwise(ids, points, card_id=card_id, normal_id=normal_id)
+	
+	# Calculate segment lengths
+	seg_length_list = []
+	for i in range(len(order_point_list)):
+		pt_tup = (order_point_list[i-1], order_point_list[i])
+		calc_dist = math.dist(*pt_tup)
+		seg_length_list.append((pt_tup, calc_dist))
+	seg_length_list.sort(reverse=True, key = lambda x: x[1])
+
+	# Find long sides
+	longest_side = seg_length_list[0]
+	opposite_side = [seg for seg in seg_length_list if len(set(longest_side[0]).intersection(set(seg[0]))) == 0][0]
+	long_sides = [longest_side, opposite_side]
+
+	# Find short sides
+	short_sides = [seg for seg in seg_length_list if seg not in long_sides]
+
+	# Find average side lengths
+	long_avg = mean(tup[1] for tup in long_sides)
+	short_avg = mean(tup[1] for tup in short_sides)
+
+	# Rotate correction if specified
+	if rotation > 0:
+		order_point_list = rotate_list(order_point_list, rotation, len(order_point_list))
+	
+	# Calculate destination points
+	y_len, x_len, z_len = image.shape
+
+	if (x_len < y_len):
+		# Portrait case
+		y_buffer = (y_len - long_avg) // 2
+		x_buffer = (x_len - short_avg) // 2
+	
+	else:
+		# Landscape or square case
+		y_buffer = (y_len - short_avg) // 2
+		x_buffer = (x_len - long_avg) // 2
+
+
+	dest_points = [
+		(x_buffer+inset,y_buffer+inset),
+		(x_len-x_buffer-inset,y_buffer+inset),
+		(x_len-x_buffer-inset,y_len-y_buffer-inset),
+		(x_buffer+inset,y_len-y_buffer-inset),
+	]
 	
 	# Keystone image and return
 	return keystone_correct(image, order_point_list, dest_points)

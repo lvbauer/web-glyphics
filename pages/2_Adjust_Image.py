@@ -31,7 +31,8 @@ ARUCO_DICT = {
 
 METHODS = [
     "RECTANGLE",
-    "SQUARE"
+    "SQUARE",
+    "MAINTAIN"
 ]
 
 def main():
@@ -73,7 +74,7 @@ def main():
         user_other_pt = st.number_input("Choose ID number of other points:", min_value=0, max_value=dictionary_num_value-1, step=1, value=1)
     with col2:
         user_rotation_value = st.selectbox("Choose counterclockwise rotation value:", options=[0,1,2,3,4], format_func=lambda x : x*90)
-        user_inset_value = st.number_input("Choose inset: (px)", min_value=0, max_value=1500, step=1)
+        user_inset_value = st.number_input("Choose inset: (px)", step=1)
     
 
     if (user_cardinal_pt == user_other_pt):
@@ -107,9 +108,14 @@ def main():
             adj_img = adj.expand_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         elif user_correction_method.upper() == "SQUARE":
             adj_img = adj.square_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
-        
+        elif user_correction_method.upper() == "MAINTAIN":
+            adj_img = adj.maintain_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+
         # Display adjusted image
         st.header("Adjusted Image")
+        final_rot = st.selectbox("Choose final rotation:", options=[0,1,2,3,4], format_func=lambda x : x*90)
+        adj_img = np.rot90(adj_img, k=final_rot)
+
         st.image(adj_img)
 
 if __name__ == '__main__':
