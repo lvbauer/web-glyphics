@@ -43,6 +43,15 @@ def main():
         pt_output = np.asarray(pt_output, dtype=np.float32)
         cv2.aruco.drawDetectedMarkers(img_copy, pt_output)
 
+        # Top 5 Markers Drawn on Image
+        st.header("Located Squares")
+        st.write("5 best-fit squares.")
+        img_loc = np.copy(img)
+        loc_output = [tup[1] for tup in locate_output]
+        loc_output = np.asarray(pt_output, dtype=np.float32)
+        cv2.aruco.drawDetectedMarkers(img_loc, loc_output)
+        st.image(img_loc)
+
         # Annotated image display
         st.header("Validated Squares Image")
         st.image(img_copy)

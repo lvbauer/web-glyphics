@@ -1,7 +1,7 @@
 import cv2
 import math
 import numpy as np
-from statistics import mean
+from statistics import mean, median
 
 
 def get_aruco_points(marker_corners):
@@ -86,7 +86,6 @@ def order_aruco_clockwise(ids, marker_centers, card_id=0, normal_id=1):
 	angle_sort_list = sorted([point for marker_id, point in point_id_list if ((marker_id != card_id) and (marker_id == normal_id))], key=lambda x: angle_points_centroid(card_pt, centroid, x))
 	angle_sort_list.insert(0, card_pt)
 	return angle_sort_list
-	
 
 
 def keystone_correct(rgb_img, src_points, dest_points):
@@ -122,13 +121,13 @@ def rotate_list(arr,d,n):
 	return arr
 
 
-def expand_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
+def expand_correct_image(image, dictionary, card_id=0, normal_id=1, inset=0, rotation=0):
 	"""
 	Wholistic function to correct image to a expanded view
 	"""
 	
 	# Load dictionary and detect markers
-	arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+	arucoDict = cv2.aruco.Dictionary_get(dictionary)
 	arucoParams = cv2.aruco.DetectorParameters_create()
 	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
 
@@ -155,13 +154,13 @@ def expand_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
 	# Keystone image and return
 	return keystone_correct(image, order_point_list, dest_points)
 
-def square_correct_image(image, card_id=0, normal_id=1, rotation=0, inset=0):
+def square_correct_image(image, dictionary, card_id=0, normal_id=1, rotation=0, inset=0):
 	"""
 	Wholistic function to correct image to a expanded view
 	"""
 	
 	# Load dictionary and detect markers
-	arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+	arucoDict = cv2.aruco.Dictionary_get(dictionary)
 	arucoParams = cv2.aruco.DetectorParameters_create()
 	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
 
@@ -203,13 +202,13 @@ def square_correct_image(image, card_id=0, normal_id=1, rotation=0, inset=0):
 	# Keystone image and return
 	return keystone_correct(image, order_point_list, dest_points)
 
-def maintain_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
+def maintain_correct_image(image, dictionary, card_id=0, normal_id=1, inset=0, rotation=0):
 	"""
 	Wholistic function to correct image to a squared version of its original size
 	"""
 	
 	# Load dictionary and detect markers
-	arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+	arucoDict = cv2.aruco.Dictionary_get(dictionary)
 	arucoParams = cv2.aruco.DetectorParameters_create()
 	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
 
@@ -220,6 +219,7 @@ def maintain_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
 	order_point_list = order_aruco_clockwise(ids, points, card_id=card_id, normal_id=normal_id)
 	
 	# Calculate segment lengths
+	# TODO replace with a function
 	seg_length_list = []
 	for i in range(len(order_point_list)):
 		pt_tup = (order_point_list[i-1], order_point_list[i])
@@ -250,19 +250,86 @@ def maintain_correct_image(image, card_id=0, normal_id=1, inset=0, rotation=0):
 		# Portrait case
 		y_buffer = (y_len - long_avg) // 2
 		x_buffer = (x_len - short_avg) // 2
+
+		# Calculate inset values
+		inset_scale = long_avg / short_avg
+
+		x_inset = int(inset * 1)
+		y_inset = int(inset * inset_scale)
 	
 	else:
 		# Landscape or square case
 		y_buffer = (y_len - short_avg) // 2
 		x_buffer = (x_len - long_avg) // 2
 
+		# Calculate inset values
+		inset_scale = long_avg / short_avg
+
+		x_inset = int(inset * inset_scale)
+		y_inset = int(inset * 1)
 
 	dest_points = [
-		(x_buffer+inset,y_buffer+inset),
-		(x_len-x_buffer-inset,y_buffer+inset),
-		(x_len-x_buffer-inset,y_len-y_buffer-inset),
-		(x_buffer+inset,y_len-y_buffer-inset),
+		(x_buffer+x_inset,y_buffer+y_inset),
+		(x_len-x_buffer-x_inset,y_buffer+y_inset),
+		(x_len-x_buffer-x_inset,y_len-y_buffer-y_inset),
+		(x_buffer+x_inset,y_len-y_buffer-y_inset),
 	]
 	
 	# Keystone image and return
 	return keystone_correct(image, order_point_list, dest_points)
+
+def get_scale(image, size=1, method="SEGMENTS_MEAN", dictionary=cv2.aruco.DICT_4X4_50, marker_ids=[0,1]):
+
+	# Load dictionary and detect markers
+	arucoDict = cv2.aruco.Dictionary_get(dictionary)
+	arucoParams = cv2.aruco.DetectorParameters_create()
+	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
+
+	# No markers in image
+	if (len(corners) == 0):
+		return None
+
+	if (method.upper() == "SEGMENTS_MEAN") or (method.upper() == "SEGMENTS_MEDIAN"):
+		# Calculate scale based on user specified method
+		# Calculate all segment lengths between points among all markers
+		seg_length_list = []
+		for idx, pts in enumerate(corners):
+
+			if (ids[idx] not in marker_ids):
+				continue
+
+			working_seg_lens = []
+			for i, pt in enumerate(pts):
+				pt_tup = (tuple(pt[i-1].tolist()), tuple(pt[i].tolist()))
+				working_seg_lens.append(math.dist(*pt_tup))
+			seg_length_list.extend(working_seg_lens)
+		
+		# Choose statistic to handle segment lengths
+		if (method.upper() == "SEGMENTS_MEAN"):
+			scale = mean(seg_length_list)
+		elif (method.upper() == "SEGMENTS_MEDIAN"):
+			scale = median(seg_length_list)
+	
+	elif (method.upper() == "AREA_MEAN") or (method.upper() == "AREA_MEDIAN"):
+		# Use contourArea to generate list of contour areas, then do statistics on them
+		
+		marker_areas = []
+		for idx, marker in enumerate(corners):
+			if (ids[idx] not in marker_ids):
+				continue
+			marker_areas.append(cv2.contourArea(marker))
+		marker_areas = map(math.sqrt, marker_areas)
+
+		if (method.upper() == "AREA_MEAN"):
+			scale = mean(marker_areas)
+			
+		elif (method.upper() == "AREA_MEDIAN"):
+			scale = median(marker_areas)
+		else:
+			pass
+	
+	else:
+		return None
+
+	return scale / size
+

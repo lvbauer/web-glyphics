@@ -30,9 +30,16 @@ ARUCO_DICT = {
 }
 
 METHODS = [
+    "MAINTAIN",
     "RECTANGLE",
-    "SQUARE",
-    "MAINTAIN"
+    "SQUARE"
+]
+
+SCALE_OPTIONS = [
+    "SEGMENTS_MEAN",
+    "SEGMENTS_MEDIAN",
+    "AREA_MEAN",
+    "AREA_MEDIAN"
 ]
 
 def main():
@@ -105,11 +112,11 @@ def main():
 
         # Apply transformation to the image
         if user_correction_method.upper() == "RECTANGLE":
-            adj_img = adj.expand_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+            adj_img = adj.expand_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         elif user_correction_method.upper() == "SQUARE":
-            adj_img = adj.square_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+            adj_img = adj.square_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         elif user_correction_method.upper() == "MAINTAIN":
-            adj_img = adj.maintain_correct_image(img, card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+            adj_img = adj.maintain_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
 
         # Display adjusted image
         st.header("Adjusted Image")
@@ -117,6 +124,17 @@ def main():
         adj_img = np.rot90(adj_img, k=final_rot)
 
         st.image(adj_img)
+
+        # Prompt for scale finding
+        st.header("Image Scale Calculation")
+        user_scale_method = st.selectbox("Select Scale Calculation Method", options=SCALE_OPTIONS)
+        user_scale_value = st.number_input("Scale Value", min_value=0, value=1)
+
+        img_scale = adj.get_scale(adj_img, size=user_scale_value, method=user_scale_method, 
+            marker_ids=[user_cardinal_pt, user_other_pt], dictionary=ARUCO_DICT[user_dictionary])
+        
+        st.write("Scale:")
+        st.write(img_scale)
 
 if __name__ == '__main__':
     main()
