@@ -31,6 +31,7 @@ ARUCO_DICT = {
 
 METHODS = [
     "MAINTAIN",
+    "MAINTAIN_EXPAND",
     "RECTANGLE",
     "SQUARE"
 ]
@@ -83,6 +84,8 @@ def main():
         user_rotation_value = st.selectbox("Choose counterclockwise rotation value:", options=[0,1,2,3,4], format_func=lambda x : x*90)
         user_inset_value = st.number_input("Choose inset: (px)", step=1)
     
+    user_auto_inset_value = st.checkbox("Use Auto Inset Correction", help="Automatically calculates an inset which includes the full markers in the final image for use in finding scale. "
+        "NOTE: Overrides user inset input when selected.")
 
     if (user_cardinal_pt == user_other_pt):
         st.warning("Point designations cannot be equal. Choose different values for marker ID.")
@@ -110,6 +113,20 @@ def main():
             st.warning(f"No markers detected in '{user_image.name}'.")
             st.stop()
 
+        # Calculate inset if auto-inset is selected
+        if user_auto_inset_value:
+            
+            # Calculate scale based on markers
+            img_scale = adj.get_scale(img, size=1, method="SEGMENTS_MEDIAN", 
+                marker_ids=[user_cardinal_pt, user_other_pt], dictionary=ARUCO_DICT[user_dictionary])
+            
+            # Auto-inset = scale_value * AUTO_INSET_ADJ
+            AUTO_INSET_ADJ = 1.5
+            user_inset_value = int(img_scale * AUTO_INSET_ADJ)
+
+            st.write("Scale Value Calculated from Auto-Inset Calculation:")
+            st.code(img_scale)
+
         # Apply transformation to the image
         if user_correction_method.upper() == "RECTANGLE":
             adj_img = adj.expand_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
@@ -117,6 +134,8 @@ def main():
             adj_img = adj.square_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         elif user_correction_method.upper() == "MAINTAIN":
             adj_img = adj.maintain_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+        elif user_correction_method.upper() == "MAINTAIN_EXPAND":
+            adj_img = adj.maintain_expand_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
 
         # Display adjusted image
         st.header("Adjusted Image")
@@ -133,8 +152,12 @@ def main():
         img_scale = adj.get_scale(adj_img, size=user_scale_value, method=user_scale_method, 
             marker_ids=[user_cardinal_pt, user_other_pt], dictionary=ARUCO_DICT[user_dictionary])
         
-        st.write("Scale:")
-        st.write(img_scale)
+        st.subheader("Scale")
+
+        if (img_scale is None):
+            st.warning("No Scale Calculated. To calculate scale, make sure markers are readable in final image.")
+        else:
+            st.metric("Scale (Pixels per unit)", round(img_scale, 2))
 
 if __name__ == '__main__':
     main()
