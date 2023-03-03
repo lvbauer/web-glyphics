@@ -394,8 +394,93 @@ def maintain_expand_correct_image(image, dictionary, card_id=0, normal_id=1, ins
 	# Keystone image and return
 	return keystone_correct_resize(image, order_point_list, dest_points, new_shape=new_shape)
 
+def maintain_expand_corner_correct_image(image, dictionary, card_id=0, normal_id=1, inset=0, rotation=0, auto_inset=False):
+	"""
+	Wholistic function to correct image by moving its corner to images (0,0) and expanding the bottom right corner to include a square for scale measurement.
+	"""
+	
+	# Load dictionary and detect markers
+	arucoDict = cv2.aruco.Dictionary_get(dictionary)
+	arucoParams = cv2.aruco.DetectorParameters_create()
+	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
+
+	# Get points from corners
+	points = get_aruco_points(corners)
+	
+	# Order points (Find source points)
+	order_point_list = order_aruco_clockwise(ids, points, card_id=card_id, normal_id=normal_id)
+	
+	# Calculate segment lengths
+	# TODO replace with a function
+	seg_length_list = []
+	for i in range(len(order_point_list)):
+		pt_tup = (order_point_list[i-1], order_point_list[i])
+		calc_dist = math.dist(*pt_tup)
+		seg_length_list.append((pt_tup, calc_dist))
+	seg_length_list.sort(reverse=True, key = lambda x: x[1])
+
+	# Find long sides
+	longest_side = seg_length_list[0]
+	opposite_side = [seg for seg in seg_length_list if len(set(longest_side[0]).intersection(set(seg[0]))) == 0][0]
+	long_sides = [longest_side, opposite_side]
+
+	# Find short sides
+	short_sides = [seg for seg in seg_length_list if seg not in long_sides]
+
+	# Find average side lengths
+	long_avg = mean(tup[1] for tup in long_sides)
+	short_avg = mean(tup[1] for tup in short_sides)
+
+	# Rotate correction if specified
+	if rotation > 0:
+		order_point_list = rotate_list(order_point_list, rotation, len(order_point_list))
+	
+	# Calculate destination points
+	y_len, x_len, z_len = image.shape
+
+	if (x_len < y_len):
+		# Portrait case
+		y_buffer = (y_len - long_avg) // 2
+		x_buffer = (x_len - short_avg) // 2
+
+		# Calculate inset values
+		inset_scale = long_avg / short_avg
+
+		x_inset = int(inset * 1)
+		y_inset = int(inset * inset_scale)
+	
+	else:
+		# Landscape or square case
+		y_buffer = (y_len - short_avg) // 2
+		x_buffer = (x_len - long_avg) // 2
+
+		# Calculate inset values
+		inset_scale = long_avg / short_avg
+
+		x_inset = int(inset * inset_scale)
+		y_inset = int(inset * 1)
+
+	dest_points = [
+		(0, 0),
+		((long_avg * inset_scale), 0),
+		((long_avg * inset_scale), y_len),
+		(0, y_len),
+	]
+	
+	new_shape = (
+		int(y_len+(inset*2)), 
+		int((long_avg * inset_scale) + (inset*2)), 
+		int(z_len)
+		)
+
+	# Keystone image and return
+	return keystone_correct_resize(image, order_point_list, dest_points, new_shape=new_shape)
+
 
 def get_scale(image, size=1, method="SEGMENTS_MEAN", dictionary=cv2.aruco.DICT_4X4_50, marker_ids=[0,1]):
+	"""
+	Gets scale from image based on CV sticker.
+	"""
 
 	# Load dictionary and detect markers
 	arucoDict = cv2.aruco.Dictionary_get(dictionary)

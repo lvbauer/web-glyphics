@@ -32,6 +32,7 @@ ARUCO_DICT = {
 METHODS = [
     "MAINTAIN",
     "MAINTAIN_EXPAND",
+    "MAINTAIN_EXPAND_CORNER",
     "RECTANGLE",
     "SQUARE"
 ]
@@ -136,6 +137,8 @@ def main():
             adj_img = adj.maintain_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         elif user_correction_method.upper() == "MAINTAIN_EXPAND":
             adj_img = adj.maintain_expand_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+        elif user_correction_method.upper() == "MAINTAIN_EXPAND_CORNER":
+            adj_img = adj.maintain_expand_corner_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
 
         # Display adjusted image
         st.header("Adjusted Image")
