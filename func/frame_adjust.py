@@ -491,13 +491,14 @@ def get_scale(image, size=1, method="SEGMENTS_MEAN", dictionary=cv2.aruco.DICT_4
 	if (len(corners) == 0):
 		return None
 
+	# Side segment based calculations
 	if (method.upper() == "SEGMENTS_MEAN") or (method.upper() == "SEGMENTS_MEDIAN"):
 		# Calculate scale based on user specified method
 		# Calculate all segment lengths between points among all markers
 		seg_length_list = []
 		for idx, pts in enumerate(corners):
 
-			if (ids[idx] not in marker_ids):
+			if (ids[idx] not in marker_ids) and (marker_ids != []):
 				continue
 
 			working_seg_lens = []
@@ -512,12 +513,13 @@ def get_scale(image, size=1, method="SEGMENTS_MEAN", dictionary=cv2.aruco.DICT_4
 		elif (method.upper() == "SEGMENTS_MEDIAN"):
 			scale = median(seg_length_list)
 	
+	# Area based calculations
 	elif (method.upper() == "AREA_MEAN") or (method.upper() == "AREA_MEDIAN"):
 		# Use contourArea to generate list of contour areas, then do statistics on them
 		
 		marker_areas = []
 		for idx, marker in enumerate(corners):
-			if (ids[idx] not in marker_ids):
+			if (ids[idx] not in marker_ids) and (marker_ids != []):
 				continue
 			marker_areas.append(cv2.contourArea(marker))
 		marker_areas = map(math.sqrt, marker_areas)
