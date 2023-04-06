@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
+from io import BytesIO
 from func import frame_adjust as adj
 
 # define names of each possible ArUco tag OpenCV supports
@@ -122,7 +123,7 @@ def main():
                 marker_ids=[user_cardinal_pt, user_other_pt], dictionary=ARUCO_DICT[user_dictionary])
             
             # Auto-inset = scale_value * AUTO_INSET_ADJ
-            AUTO_INSET_ADJ = 1.5
+            AUTO_INSET_ADJ = 1
             user_inset_value = int(img_scale * AUTO_INSET_ADJ)
 
             st.write("Scale Value Calculated from Auto-Inset Calculation:")
@@ -146,6 +147,22 @@ def main():
         adj_img = np.rot90(adj_img, k=final_rot)
 
         st.image(adj_img)
+
+        # Make new name for corrected image download
+        user_image_name_trim = user_image.name.split(".")[0]
+        adj_image_name = user_image_name_trim + "_corrected.jpeg"
+        
+        # Download button for full sized image
+        im_pil = Image.fromarray(adj_img)
+        buf = BytesIO()
+        im_pil.save(buf, format="JPEG")
+        bytes_img = buf.getvalue()
+        st.download_button(
+            label="Download Full-Sized Image", 
+            data=bytes_img, 
+            file_name=adj_image_name,
+            mime="image/jpeg"
+            )
 
         # Prompt for scale finding
         st.header("Image Scale Calculation")
