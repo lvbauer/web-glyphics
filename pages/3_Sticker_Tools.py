@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
+from io import BytesIO
 from func import airisquare as asq
 
 # Set page name
@@ -61,8 +62,8 @@ def main():
         st.header("Original Image")
         st.image(img)
 
-        
-        
+        # Instantiate final_image
+        final_image = None
 
         if TOOL_OPTIONS.index(user_function) == 0:
 
@@ -100,7 +101,23 @@ def main():
                 st.image(difference_image)
                 st.write(np.mean(difference_image))
             
-
+        # Download button for full sized image
+        if (final_image is not None):
+            # Make new name for corrected image download
+            user_image_name_trim = user_image.name.split(".")[0]
+            final_image_name = user_image_name_trim + "_corrected.jpeg"
+            
+            # Prepare image for download
+            im_pil = Image.fromarray(final_image)
+            buf = BytesIO()
+            im_pil.save(buf, format="JPEG")
+            bytes_img = buf.getvalue()
+            st.download_button(
+                label="Download Full-Sized Image", 
+                data=bytes_img, 
+                file_name=final_image_name,
+                mime="image/jpeg"
+                )
 
 if __name__ == "__main__":
     main()
