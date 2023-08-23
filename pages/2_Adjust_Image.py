@@ -5,6 +5,9 @@ from PIL import Image
 from io import BytesIO
 from func import frame_adjust as adj
 
+# Set page name
+st.set_page_config(page_title="Adjust Marker Image")
+
 # define names of each possible ArUco tag OpenCV supports
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
