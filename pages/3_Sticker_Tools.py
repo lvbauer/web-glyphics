@@ -103,14 +103,16 @@ def main():
             
         # Download button for full sized image
         if (final_image is not None):
+            user_image_format = st.selectbox("Image Download Format", options=["JPEG", "TIFF", "PNG"])
+
             # Make new name for corrected image download
             user_image_name_trim = user_image.name.split(".")[0]
-            final_image_name = user_image_name_trim + "_corrected.jpeg"
+            final_image_name = user_image_name_trim + f"_corrected.{user_image_format.lower()}"
             
             # Prepare image for download
             im_pil = Image.fromarray(final_image)
             buf = BytesIO()
-            im_pil.save(buf, format="JPEG")
+            im_pil.save(buf, format=user_image_format)
             bytes_img = buf.getvalue()
             st.download_button(
                 label="Download Full-Sized Image", 
