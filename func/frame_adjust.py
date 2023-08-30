@@ -555,7 +555,6 @@ def calc_marker_range(ids, pts, card_id=0, normal_id=1, with_stats=True):
 			cnt_area = cv2.contourArea(pt)
 			contour_area_list.append(cnt_area)
 
-	
 	if not with_stats:
 		return contour_area_list
 
@@ -580,7 +579,3 @@ def calc_marker_range(ids, pts, card_id=0, normal_id=1, with_stats=True):
 
 
 		return contour_area_list, stats_dict
-
-
-
-	
