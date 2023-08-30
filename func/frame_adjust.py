@@ -1,7 +1,7 @@
 import cv2
 import math
 import numpy as np
-from statistics import mean, median
+from statistics import mean, median, mode, pvariance, stdev
 
 
 def get_aruco_points(marker_corners):
@@ -537,3 +537,50 @@ def get_scale(image, size=1, method="SEGMENTS_MEAN", dictionary=cv2.aruco.DICT_4
 
 	return scale / size
 
+def calc_marker_range(ids, pts, card_id=0, normal_id=1, with_stats=True):
+	"""Calculates the sizes of relevant detected markers and reports variance. 
+	This gives a rough idea how much error is introduced by skew in the image.
+	"""
+
+
+	# associate ids with pts
+	adj_ids_list = [card_id, normal_id]
+	id_list = [id[0] for id in ids.tolist()]
+	id_pt_list = list(zip(id_list, pts))
+
+	# Verify id and calculate contour area
+	contour_area_list = []
+	for id, pt in id_pt_list:
+		if (id in adj_ids_list):
+			cnt_area = cv2.contourArea(pt)
+			contour_area_list.append(cnt_area)
+
+	
+	if not with_stats:
+		return contour_area_list
+
+	else:
+		stats_dict = dict()
+
+		sorted_area_list = sorted(contour_area_list)
+		stats_dict["min"] = float(sorted_area_list[0])
+		stats_dict["max"] = float(sorted_area_list[-1])
+		stats_dict["range"] = float(stats_dict["max"] - stats_dict["min"])
+
+		stats_dict["mean"] = float(mean(sorted_area_list))
+		stats_dict["median"] = float(median(sorted_area_list))
+		#stats_dict["mode"] = float(mode(sorted_area_list))
+
+		#stats_dict["variance"] = float(pvariance(sorted_area_list))
+		stats_dict["stdev"] = float(stdev(sorted_area_list))
+		stats_dict["corr_variation"] = stats_dict["stdev"] / stats_dict["mean"]
+
+		stats_dict["rel_range_mean"] = float(stats_dict["range"] / stats_dict["mean"])
+		stats_dict["rel_range_median"] = float(stats_dict["range"] / stats_dict["median"])
+
+
+		return contour_area_list, stats_dict
+
+
+
+	

@@ -111,15 +111,24 @@ def main():
         aruco_params = cv2.aruco.DetectorParameters_create()
         corners, ids, rejected_points = cv2.aruco.detectMarkers(img, active_dict, parameters=aruco_params)
 
+        # Check for markers
+        if (ids is None):
+            st.warning(f"No markers detected in '{user_image.name}'.")
+            st.stop()
+
         # Draw markers and show annotated image
         img_copy = np.copy(img)
         cv2.aruco.drawDetectedMarkers(img_copy, corners, ids)
         with st.expander("Show Marker Annotated Image"):
             st.image(img_copy)
 
-        if (ids is None):
-            st.warning(f"No markers detected in '{user_image.name}'.")
-            st.stop()
+        # Calculate stats on marker size
+        with st.expander("Show Marker Size Range"):
+            marker_area, stats_dict = adj.calc_marker_range(ids, corners, card_id=user_cardinal_pt, normal_id=user_other_pt, with_stats=True)
+            st.write("Marker Sizes")
+            marker_area
+            st.write("Marker Size Stats")
+            st.json(stats_dict)
 
         # Calculate inset if auto-inset is selected
         if user_auto_inset_value:
@@ -155,7 +164,6 @@ def main():
         st.image(adj_img)
 
         user_image_format = st.selectbox("Image Download Format", options=["JPEG", "TIFF", "PNG"])
-
 
         # Make new name for corrected image download
         user_image_name_trim = user_image.name.split(".")[0]
