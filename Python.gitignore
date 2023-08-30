@@ -161,4 +161,4 @@ cython_debug/
 
 *.pyc
 
-./func/__pycache__/
+./func/__pycache__

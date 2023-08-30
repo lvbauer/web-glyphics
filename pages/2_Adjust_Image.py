@@ -114,6 +114,9 @@ def main():
         # Draw markers and show annotated image
         img_copy = np.copy(img)
         cv2.aruco.drawDetectedMarkers(img_copy, corners, ids)
+        with st.expander("Show Marker Annotated Image"):
+            st.image(img_copy)
+
         if (ids is None):
             st.warning(f"No markers detected in '{user_image.name}'.")
             st.stop()
