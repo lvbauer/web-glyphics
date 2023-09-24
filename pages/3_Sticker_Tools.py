@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 from func import airisquare as asq
+import json
 
 # Set page name
 st.set_page_config(page_title="Astrobotany Sticker Tools")
@@ -12,7 +13,9 @@ st.set_page_config(page_title="Astrobotany Sticker Tools")
 TOOL_OPTIONS = [
     "Show Marker", 
     "Get Scale", 
-    "Color Correction"
+    "Color Correction",
+    "Color Standard",
+    "Adjust Frame"
     ]
 
 # Methods
@@ -27,6 +30,11 @@ MARKER_SPILLOVER_HELP = "If selected, marker scale calculation method will be us
 METHOD_SELECT_HELP = """The 'STICKER' method calculates scale from the entire Astrobotany sticker. 
 The 'MARKER' method calculates scale based only on the sticker markers
 , which is useful if the Astrobotany is partially covered in the image."""
+
+# Error case
+def marker_error():
+    st.error("Marker not found in image.")
+    st.stop()
 
 def main():
 
@@ -62,8 +70,9 @@ def main():
         st.header("Original Image")
         st.image(img)
 
-        # Instantiate final_image
+        # Instantiate final_image and standard_square
         final_image = None
+        standard_square = None
 
         if TOOL_OPTIONS.index(user_function) == 0:
 
@@ -83,7 +92,11 @@ def main():
 
             user_scale_method = st.selectbox("Scale Calculation Method", options=SCALE_METHODS)
             user_spillover = st.checkbox("Marker Spillover", value=True, help=MARKER_SPILLOVER_HELP)
-            scale_val, unit = asq.asq_find_scale(img, user_scale_method, spillover=user_spillover)
+
+            try:
+                scale_val, unit = asq.asq_find_scale(img, user_scale_method, spillover=user_spillover)
+            except:
+                marker_error()
 
             st.subheader("Calculated Scale")
             st.metric("Scale Value", value=f"{scale_val} pixels per meter")
@@ -92,7 +105,11 @@ def main():
             
             st.header("Color Correct Image")
 
-            final_image = asq.asq_color_correct(img)
+            try:
+                final_image = asq.asq_color_correct(img)
+            except:
+                marker_error()
+
             st.image(final_image)
 
 
@@ -100,6 +117,19 @@ def main():
                 difference_image = img - final_image
                 st.image(difference_image)
                 st.write(np.mean(difference_image))
+
+        elif TOOL_OPTIONS.index(user_function) == 3:
+            
+            st.header("Get Color References")
+            
+
+            try:
+                standard_square = asq.asq_color_standards(img, list_convert=True)
+            except:
+                marker_error()
+        
+            st.subheader("Color Standard Data")
+            st.json(standard_square, expanded=False)
             
         # Download button for full sized image
         if (final_image is not None):
@@ -120,6 +150,16 @@ def main():
                 file_name=final_image_name,
                 mime="image/jpeg"
                 )
+            
+        if (standard_square is not None):
+            json_string = json.dumps(standard_square)
+            user_image_name_trim = user_image.name.split(".")[0]
+            st.download_button(
+                label="Download Image Color Reference",
+                file_name=f"{user_image_name_trim}_color_reference.json",
+                mime="application/json",
+                data=json_string
+            )
 
 if __name__ == "__main__":
     main()

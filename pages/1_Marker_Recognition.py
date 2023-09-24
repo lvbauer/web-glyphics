@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
+from func.airisquare import get_aruco_points
 
 # Set page name
 st.set_page_config(page_title="Marker Recognition")
@@ -90,12 +91,17 @@ def main():
         with tab2:
             st.subheader("Marker Corner Points:")
             st.code(corners)
+            
+            st.subheader("Center Points")
+            center_points = get_aruco_points(corners)
+            st.code(center_points)
 
         with tab3:
             st.subheader("Rejected Points:")
             rejected_img = np.copy(img)
             cv2.aruco.drawDetectedMarkers(rejected_img, rejected_points)
             st.image(rejected_img)
+           
 
 if __name__ == "__main__":
     main()

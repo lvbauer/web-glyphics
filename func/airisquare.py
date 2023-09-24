@@ -1,8 +1,8 @@
-import streamlit as st
 import numpy as np
 import cv2
 import statistics as stat
 import math
+import colorsys
 
 # Marker Values
 TOP_LEFT = 48
@@ -11,12 +11,12 @@ BOTTOM_LEFT = 47
 BOTTOM_RIGHT = 46
 
 # ArUco Marker Side Length
-MARKER_LENGTH_VALUE = 0.008
+MARKER_LENGTH_VALUE = 0.007975
 MARKER_LENGTH_UNIT = "Meter"
 
 # Astrobotany Sticker Side Length
-STICKER_LONG_SIDE_LENGTH = 0.04526
-STICKER_SHORT_SIDE_WIDTH = 0.03658
+STICKER_LONG_SIDE_LENGTH = 0.04544
+STICKER_SHORT_SIDE_WIDTH = 0.03677
 STICKER_SIDE_UNIT = "Meter"
 
 # Methods
@@ -189,12 +189,10 @@ def asq_color_correct(img):
     try:
         marker_pt_list = get_validate_square(img)
     except TypeError:
-        st.error("Marker not found in image.")
-        return img    
+        raise Exception("Marker not found in image.")
 
     if (len(marker_pt_list) < 4):
-        st.error(f"Marker not found in image.")
-        return img
+        raise Exception("Marker not found in image.")
 
     marker_pt_list = get_aruco_points(marker_pt_list)
 
@@ -249,12 +247,12 @@ def asq_show_marker(img):
     try:
         marker_cords, marker_ids = get_validate_square_ids(img)
     except TypeError:
-        st.error("Marker not found in image.")
+        raise Exception("Marker not found in image.")
         return img
 
     # Check if marker was found
     if (len(marker_cords) < 4):
-        st.error("Marker not found in image.")
+        raise Exception("Marker not found in image.")
         return img
 
     # Convert marker ids to array
@@ -275,3 +273,188 @@ def asq_show_marker(img):
         cv2.line(marker_img, p, marker_points[(idx+1)%(len(marker_points))], (255,0,0), int(circle_size//2))
 
     return marker_img
+
+def asq_color_standards(img, list_convert=False):
+
+    # Get marker points
+    try:
+        marker_pt_list = get_validate_square(img)
+    except TypeError:
+        raise Exception("Marker not found in image.")
+
+    if (len(marker_pt_list) < 4):
+        raise Exception("Marker not found in image.")
+
+    marker_pt_list = get_aruco_points(marker_pt_list)
+
+    dest_pts = [
+         [18, 18],
+         [18, 157],
+         [190, 157],
+         [190, 18]
+    ]
+
+    # (X,Y) to (Y,X)
+    dest_pts_correct = [[pt[1], pt[0]] for pt in dest_pts]
+
+    # Make array to warp into
+    marker_arr = np.zeros((MARKER_HEIGHT, MARKER_WIDTH, 3), dtype=np.uint8)
+
+    marker_pt_array = np.array(marker_pt_list, dtype=np.float32)
+    dest_pt_array = np.array(dest_pts_correct, dtype=np.float32)
+
+    H = cv2.findHomography(marker_pt_array, dest_pt_array, cv2.LMEDS)
+    marker_stretch_img = cv2.warpPerspective(img, H[0], (marker_arr.shape[1], marker_arr.shape[0]))
+
+    # Color reference dictionary to add to
+    color_ref_dict = dict()
+
+    # Colorblocks
+    # Values are inclusive
+    blocks_top = 10
+    blocks_bottom = 197
+    blocks_left = 77
+    blocks_right = 113
+
+    color_ref_dict["color_blocks"] = _get_rgbyb_standard(marker_stretch_img)
+
+    # Checkerboard
+    board_top = 39
+    board_bottom = 169
+    board_left = 11
+    board_right = 37
+
+    # Hue Sweep
+    hue_top = 10
+    hue_bottom = 198
+    hue_left = 40
+    hue_right = 57
+
+    color_ref_dict["hue_sweep"] = _get_hue_sweep(marker_stretch_img)
+
+    # Gray Sweep
+    gray_top = 10
+    gray_bottom = 197
+    gray_left = 59
+    gray_right = 75
+    color_ref_dict["gray_sweep"] = _get_gray_standard(marker_stretch_img)
+
+
+    if (list_convert):
+        list_convert_dict = dict()
+        for key1, ref_dict in color_ref_dict.items():
+           list_convert_dict[key1] = {key: arr.tolist() for key, arr in ref_dict.items()}
+
+        return list_convert_dict
+
+    return color_ref_dict
+
+def _standard_template(marker_array):
+
+    standard_dict = dict()
+
+    return standard_dict
+
+def _get_hue_sweep(marker_array):
+
+    standard_dict = dict()
+
+    hue_top = 10
+    hue_bottom = 198
+    hue_left = 40
+    hue_right = 57
+
+    hue_slice = marker_array[hue_top:hue_bottom+1,hue_left:hue_right+1, :]
+    hue_sweep_mean = np.mean(hue_slice, axis=(1))
+    standard_dict["hue_sweep"] = hue_sweep_mean
+
+    # Hue sweep in HSV
+    hue_sweep_hsv = [colorsys.rgb_to_hsv(r, g, b) for r, g, b in hue_sweep_mean]
+    standard_dict["hue_sweep_hsv"] = np.asarray(hue_sweep_hsv)
+
+    return standard_dict
+
+def _get_rgbyb_standard(marker_array):
+
+    # Calibration parameters 
+    blocks_top = 10
+    blocks_bottom = 197
+    blocks_left = 77
+    blocks_right = 113
+
+    side_len = 10
+
+    squares = ["blue_stand", "green_stand", "red_stand", "yellow_stand", "black_stand"]
+
+    # Prepare values
+    blocks_slice = marker_array[blocks_top:blocks_bottom+1,blocks_left:blocks_right+1, :]
+    block_h, block_w, _ = blocks_slice.shape
+    x_val = block_w // 2
+    block_step = block_h // 5
+    block_half_step = block_step // 2
+
+    # Pull means from references
+    standard_dict = dict()
+    for idx, sq in enumerate(squares):
+        y_val = int(block_half_step + (block_step * idx))
+        square_slice = blocks_slice[y_val-side_len:y_val+side_len,x_val-side_len:x_val+side_len,:]
+        stand_val = np.mean(square_slice, axis=(0,1))
+        standard_dict[sq] = stand_val
+
+    return standard_dict
+
+
+def _get_checker_standard(marker_array):
+    
+    standard_dict = dict()
+
+    board_top = 39
+    board_bottom = 169
+    board_left = 11
+    board_right = 37
+
+    return standard_dict
+
+def _get_gray_standard(marker_array):
+
+    gray_top = 10
+    gray_bottom = 197
+    gray_left = 59
+    gray_right = 75
+
+    side_len = 4
+    squares = list(range(10))
+
+    # Prepare values
+    gray_slice = marker_array[gray_top:gray_bottom+1,gray_left:gray_right+1, :]
+    gray_h, gray_w, _ = gray_slice.shape
+    x_val = gray_w // 2
+    block_step = gray_h // 10
+    block_half_step = block_step // 2
+
+    # Pull means from references
+    standard_dict = dict()
+    for idx, sq in enumerate(squares):
+        y_val = int(block_half_step + (block_step * idx))
+        square_slice = gray_slice[y_val-side_len:y_val+side_len,x_val-side_len:x_val+side_len,:]
+        stand_val = np.mean(square_slice, axis=(0,1))
+        standard_dict[sq] = stand_val
+
+    return standard_dict
+
+def asq_adjust_image(rgb_img):
+    
+    # Define short and long side IDs
+    id_order = sorted([TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT])
+    short_sides = [(TOP_LEFT,TOP_RIGHT), (BOTTOM_LEFT,BOTTOM_RIGHT)]
+    long_sides = [(TOP_LEFT,BOTTOM_LEFT), (TOP_RIGHT,BOTTOM_RIGHT)]
+
+    # Get marker centroids and make marker dict
+    marker_centroid_list = get_aruco_points(marker_pt_list)
+    marker_dict = {id : marker_centroid_list[idx] for idx, id in enumerate(id_order)}
+
+    # Get side lengths
+    long_side_lengths = get_lengths(long_sides, marker_dict)
+    short_side_lengths = get_lengths(short_sides, marker_dict)
+    
+    return image
