@@ -1,14 +1,38 @@
 import streamlit as st
-import cv2
 import numpy as np
 from PIL import Image
 from func import greenindex as gidx
 
 st.set_page_config(page_title="Green Index Calculator")
 
+CALCULATOR_HELP = '''
+Calculate the Green Index metric from RGB values or images. The Green Index metric is useful for understanding "greenness" of plants.
+
+Green Index is described in bioRxiv preprint: [Green Index: a widely accessible method to quantify greenness of photosynthetic organisms](https://doi.org/10.1101/2023.08.23.554481).
+'''
+
 def main():
 
     st.title("Green Index Calculator")
+    
+    st.markdown(CALCULATOR_HELP)
+
+    with st.expander("Simple Green Index Calculator"):
+        st.write("Calculate Green Index from RGB Values.")
+
+        red_tab, green_tab, blue_tab = st.columns(3)
+
+        with red_tab:
+            red_val = st.number_input("Red Value", min_value=0.0, value=0.0, max_value=255.0)
+        with green_tab:
+            green_val = st.number_input("Green Value", min_value=0.0, value=0.0, max_value=255.0)
+        with blue_tab:
+            blue_val = st.number_input("Blue Value", min_value=0.0, value=0.0, max_value=255.0)
+
+        green_index_calc = gidx.calc_green_index(r=red_val, g=green_val, b=blue_val)
+
+        st.metric(label="Green Index", value=green_index_calc)
+
     st.header("Image Upload")
 
     # Create tabs for upload images or using camera
