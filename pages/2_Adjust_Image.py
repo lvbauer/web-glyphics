@@ -123,7 +123,7 @@ def main():
         with st.expander("Show Marker Annotated Image"):
             st.image(img_copy)
             st.write("Marker IDs Found:")
-            st.json(ids.tolist())
+            st.json([id[0] for id in ids.tolist()])
 
         # Calculate stats on marker size
         
@@ -137,6 +137,7 @@ def main():
         except IndexError:
             st.error(f"Markers not found. Check selected marker IDs to ensure correct markers are being considered.")
             st.info(f"Curent Cardinal ID: {user_cardinal_pt}, Current Normal ID: {user_other_pt}")
+            st.info(f"Detected Marker IDs: {[id[0] for id in ids.tolist()]}")
             st.stop()
 
 
