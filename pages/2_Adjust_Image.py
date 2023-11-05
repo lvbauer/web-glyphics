@@ -38,7 +38,8 @@ METHODS = [
     "MAINTAIN_EXPAND",
     "MAINTAIN_EXPAND_CORNER",
     "RECTANGLE",
-    "SQUARE"
+    "SQUARE",
+    "NONE"
 ]
 
 SCALE_OPTIONS = [
@@ -155,6 +156,8 @@ def main():
             adj_img = adj.maintain_expand_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
         elif user_correction_method.upper() == "MAINTAIN_EXPAND_CORNER":
             adj_img = adj.maintain_expand_corner_correct_image(img, ARUCO_DICT[user_dictionary], card_id=user_cardinal_pt, normal_id=user_other_pt, rotation=user_rotation_value, inset=user_inset_value)
+        elif user_correction_method.upper() == "NONE":
+            adj_img = img
 
         # Display adjusted image
         st.header("Adjusted Image")
@@ -162,6 +165,25 @@ def main():
         adj_img = np.rot90(adj_img, k=final_rot)
 
         st.image(adj_img)
+
+        # Calculate new marker sizes
+        with st.expander("Show Corrected Marker Sizes"):
+            corners_post, ids_post, rejected_points_post = cv2.aruco.detectMarkers(adj_img, active_dict, parameters=aruco_params)
+            
+            try:
+                marker_area_post, stats_dict_post = adj.calc_marker_range(ids_post, corners_post, card_id=user_cardinal_pt, normal_id=user_other_pt, with_stats=True)
+                st.write("Corrected Marker Sizes")
+                marker_area_post
+                st.write("Corrected Marker Size Stats")
+                st.json(stats_dict_post)
+
+                st.subheader("Adjustment Changes")
+                st.write("Change in Marker Size")
+                st.json(adj.list_delta(marker_area, marker_area_post))
+                st.write("Change in Marker Size Stats")
+                st.json(adj.dict_delta_summary(stats_dict, stats_dict_post))
+            except:
+                st.warning("No markers found in image.")
 
         user_image_format = st.selectbox("Image Download Format", options=["JPEG", "TIFF", "PNG"])
 

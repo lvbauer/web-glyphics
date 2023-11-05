@@ -579,3 +579,37 @@ def calc_marker_range(ids, pts, card_id=0, normal_id=1, with_stats=True):
 
 
 		return contour_area_list, stats_dict
+	
+def dict_delta(dict1, dict2, abs_val=False):
+	"""Find the difference between 2 dictionaries."""
+
+	diff_dict = dict()
+	for key in dict1.keys():
+		if key not in dict2:
+			continue
+		diff_dict[key] = dict2[key] - dict1[key]
+
+	if abs_val:
+		diff_dict = {key: abs(val) for key, val in diff_dict.items()}
+
+	return diff_dict
+
+def list_delta(l1, l2, abs_val=False):
+	if abs_val:
+		return [abs(a_i - b_i) for a_i, b_i in zip(l2, l1)]
+	else:
+		return [a_i - b_i for a_i, b_i in zip(l2, l1)]
+	
+def dict_delta_summary(dict1, dict2, abs_val=False):
+	"""Find the difference between 2 dictionaries."""
+
+	diff_dict = dict()
+	for key in dict1.keys():
+		if key not in dict2:
+			continue
+		diff_dict[key] = (dict1[key], dict2[key], dict2[key] - dict1[key])
+
+	if abs_val:
+		diff_dict = {key: list(map(abs, val)) for key, val in diff_dict.items()}
+
+	return diff_dict
