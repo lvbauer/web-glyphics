@@ -122,14 +122,24 @@ def main():
         cv2.aruco.drawDetectedMarkers(img_copy, corners, ids)
         with st.expander("Show Marker Annotated Image"):
             st.image(img_copy)
+            st.write("Marker IDs Found:")
+            st.json(ids.tolist())
 
         # Calculate stats on marker size
-        with st.expander("Show Marker Size Range"):
-            marker_area, stats_dict = adj.calc_marker_range(ids, corners, card_id=user_cardinal_pt, normal_id=user_other_pt, with_stats=True)
-            st.write("Marker Sizes")
-            marker_area
-            st.write("Marker Size Stats")
-            st.json(stats_dict)
+        
+        try:
+            with st.expander("Show Marker Size Range"):
+                marker_area, stats_dict = adj.calc_marker_range(ids, corners, card_id=user_cardinal_pt, normal_id=user_other_pt, with_stats=True)
+                st.write("Marker Sizes")
+                st.json(marker_area)
+                st.write("Marker Size Stats")
+                st.json(stats_dict)
+        except IndexError:
+            st.error(f"Markers not found. Check selected marker IDs to ensure correct markers are being considered.")
+            st.info(f"Curent Cardinal ID: {user_cardinal_pt}, Current Normal ID: {user_other_pt}")
+            st.stop()
+
+
 
         # Calculate inset if auto-inset is selected
         if user_auto_inset_value:
@@ -181,6 +191,7 @@ def main():
                 st.write("Change in Marker Size")
                 st.json(adj.list_delta(marker_area, marker_area_post))
                 st.write("Change in Marker Size Stats")
+                st.write("Values are reported as Unadjusted Value, Adjusted Value, Change for each marker size statistic.")
                 st.json(adj.dict_delta_summary(stats_dict, stats_dict_post))
             except:
                 st.warning("No markers found in image.")
