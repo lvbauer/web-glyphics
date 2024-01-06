@@ -442,19 +442,144 @@ def _get_gray_standard(marker_array):
 
     return standard_dict
 
-def asq_adjust_image(rgb_img):
+def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT"):
     
+
+
     # Define short and long side IDs
-    id_order = sorted([TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT])
+    id_list = [TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT]
+    id_order = sorted(id_list)
     short_sides = [(TOP_LEFT,TOP_RIGHT), (BOTTOM_LEFT,BOTTOM_RIGHT)]
     long_sides = [(TOP_LEFT,BOTTOM_LEFT), (TOP_RIGHT,BOTTOM_RIGHT)]
 
     # Get marker centroids and make marker dict
+    marker_pt_list = get_validate_square(rgb_img)
     marker_centroid_list = get_aruco_points(marker_pt_list)
     marker_dict = {id : marker_centroid_list[idx] for idx, id in enumerate(id_order)}
+
+    dest_pt_dict = make_point_dictionary(rgb_img, marker_dict, long_sides, short_sides)
+
+    # Prepare source points
+    src_pts = [marker_dict[id] for id in id_list]
+
+    # Prepare dest points
+    if (rot == 0):
+        dst_pts = dest_pt_dict[position]["portrait"]
+    elif (rot == 1):
+        dst_pts = rotate_list(dest_pt_dict[position]["landscape"], 1)
+    elif (rot == 2):
+        dst_pts = rotate_list(dest_pt_dict[position]["portrait"], 2)
+    elif (rot == 3):
+        dst_pts = rotate_list(dest_pt_dict[position]["landscape"], 3)
+
+    # correct image
+    corr_img = keystone_correct(rgb_img, src_pts, dst_pts)
+    
+    return corr_img
+
+def make_point_dictionary(img, marker_dict, long_sides, short_sides):
+
+    # Define corner arrangements
+    corner_arrangements = [
+        ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT"],
+        ["CENTER_LEFT", "CENTER", "CENTER_RIGHT"],
+        ["BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
+        ]
+    
+    marker_arrangements = ["portrait", "landscape"]
 
     # Get side lengths
     long_side_lengths = get_lengths(long_sides, marker_dict)
     short_side_lengths = get_lengths(short_sides, marker_dict)
+
+    avg_long_side = int(stat.mean(long_side_lengths))
+    avg_short_side = int(stat.mean(short_side_lengths))
+
+    # Get centers
+    center_arr = get_centers_array(img)
+
+    # Construct Dictionary
+    point_dict = dict()
+
+    for y_idx, l in enumerate(corner_arrangements):
+        for x_idx, marker_dest in enumerate(l):
+            working_dict = {arrangement : list() for arrangement in marker_arrangements}
+
+            center_x, center_y = center_arr[y_idx][x_idx]
+            for orientation in marker_arrangements:
+                
+                if (orientation == "portrait"):
+                    working_x_vals = get_points_center(center_x, avg_short_side, x_idx)
+                    working_y_vals = rotate_list(get_points_center(center_y, avg_long_side, y_idx), 1)
+                elif (orientation == "landscape"):
+                    working_x_vals = get_points_center(center_x, avg_long_side, x_idx)
+                    working_y_vals = rotate_list(get_points_center(center_y, avg_short_side, y_idx), 1)
+                working_dict[orientation] = list(zip(working_x_vals, working_y_vals))
+
+            point_dict[marker_dest] = working_dict
     
-    return image
+    return point_dict
+
+def get_centers_array(img):
+
+    img_h, img_w, _ = img.shape
+
+    h_center = int(img_h // 2)
+    w_center = int(img_w // 2)
+
+    # in (x, y) format
+    center_array = [
+        [(0,0), (w_center, 0), (img_w, 0)],
+        [(0, h_center), (w_center, h_center), (img_w, h_center)],
+        [(0, img_h), (w_center, img_h), (img_w, img_h)]
+    ]
+
+    return center_array
+
+def get_points_center(center_val, amount, idx):
+
+    if (idx == 0):
+        return [0, amount, amount, 0]
+
+    elif (idx == 1):
+        half = int(amount // 2)
+        return [center_val - half, center_val + half, center_val + half, center_val - half]
+
+    elif (idx == 2):
+        return [center_val - amount, center_val, center_val, center_val - amount]
+
+    else:
+        raise NotImplementedError(f"Index input is not correct. Idx input: {idx}")
+    
+def rotate_list(arr,d):
+    """Rotates list arr of length n by number of positions d
+    """
+    n = len(arr)
+    arr=arr[:]
+    arr=arr[d:n]+arr[0:d]
+    return arr
+
+def keystone_correct(rgb_img, src_points, dest_points):
+	"""Keystone correct image orientation from one list of points to another
+
+	Args:
+		rgb_img: NumPy array representing an image in RGB colorspace format
+		src_points (list): list of tuples representing source points in original image, 
+			format [(x1,y1),(x2,y2),...]
+		dest_points (list): list of tuples representing destination points in relative to image, 
+			format [(x1,y1),(x2,y2),...]
+
+	Returns:
+		dest_img: Keystone corrected image as numpy array in RGB colorspace
+
+	"""
+
+	# Check that lists are of matched length
+	if len(src_points) != len(dest_points):
+		raise Exception(f"Number of points in input lists not equal. src_points: {len(src_points)}, dest_points: {len(dest_points)}")
+
+	# Keystone correction functionality
+	dstD = np.zeros(rgb_img.shape,dtype=np.uint8)
+	H = cv2.findHomography(np.array(src_points,dtype=np.float32),np.array(dest_points,dtype=np.float32),cv2.LMEDS)
+	dest_img=cv2.warpPerspective(rgb_img,H[0],(dstD.shape[1],dstD.shape[0]))
+	return dest_img

@@ -24,6 +24,14 @@ SCALE_METHODS = [
     "STICKER"
 ]
 
+# Sticker Orientation Types
+STICKER_DESTINATION = [
+        "TOP_LEFT", "TOP_CENTER", "TOP_RIGHT",
+        "CENTER_LEFT", "CENTER", "CENTER_RIGHT",
+        "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"
+        ]
+    
+
 # Help Text
 MARKER_SPILLOVER_HELP = "If selected, marker scale calculation method will be used on detected markers if all 4 tags on the astrobotany sticker are not detected."
 
@@ -131,6 +139,17 @@ def main():
             st.subheader("Color Standard Data")
             st.json(standard_square, expanded=False)
             
+        elif TOOL_OPTIONS.index(user_function) == 4:
+
+            # Collect User options
+            user_sticker_destination = st.selectbox("Sticker Destination", STICKER_DESTINATION)
+            user_sticker_rotation = st.selectbox("Sticker Rotation", [0,1,2,3], format_func=lambda x: x*90)
+
+            final_image = asq.asq_adjust_image(img, rot=user_sticker_rotation, position=user_sticker_destination)
+            
+            st.subheader("Adjusted Image")
+            st.image(final_image)
+
         # Download button for full sized image
         if (final_image is not None):
             user_image_format = st.selectbox("Image Download Format", options=["JPEG", "TIFF", "PNG"])
