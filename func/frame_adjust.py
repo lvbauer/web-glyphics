@@ -476,6 +476,38 @@ def maintain_expand_corner_correct_image(image, dictionary, card_id=0, normal_id
 	# Keystone image and return
 	return keystone_correct_resize(image, order_point_list, dest_points, new_shape=new_shape)
 
+def manual_correct_image(image, dictionary, card_id=0, normal_id=1, rotation=0, img_h=0, img_w=1024, subj_y=0, subj_x=0, subj_h=0, subj_w=0):
+
+	# Load dictionary and detect markers
+	arucoDict = cv2.aruco.Dictionary_get(dictionary)
+	arucoParams = cv2.aruco.DetectorParameters_create()
+	corners, ids, rejected = cv2.aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
+
+	# Get points from corners
+	points = get_aruco_points(corners)
+	
+	# Order points (Find source points)
+	order_point_list = order_aruco_clockwise(ids, points, card_id=card_id, normal_id=normal_id)
+
+	# Rotate correction if specified
+	if rotation > 0:
+		order_point_list = rotate_list(order_point_list, rotation, len(order_point_list))
+
+	# Calculate destination points
+	dest_points = [
+		(subj_x, subj_y),
+		(subj_x+subj_w, subj_y),
+		(subj_x+subj_w, subj_y+subj_h),
+		(subj_x, subj_y+subj_h)
+	]
+
+	# Perform homography correction
+	dstD = np.zeros((img_h, img_w), dtype=np.uint8)
+	H = cv2.findHomography(np.array(order_point_list,dtype=np.float32),np.array(dest_points,dtype=np.float32),cv2.LMEDS)
+	dest_img=cv2.warpPerspective(image, H[0] , (dstD.shape[1],dstD.shape[0]))
+
+	return dest_img
+
 
 def get_scale(image, size=1, method="SEGMENTS_MEAN", dictionary=cv2.aruco.DICT_4X4_50, marker_ids=[0,1]):
 	"""
