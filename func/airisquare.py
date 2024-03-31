@@ -455,7 +455,7 @@ def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT"):
     # Get marker centroids and make marker dict
     marker_pt_list = get_validate_square(rgb_img)
     marker_centroid_list = get_aruco_points(marker_pt_list)
-    marker_dict = {id : marker_centroid_list[idx] for idx, id in enumerate(id_order)}
+    marker_dict = {id : marker_centroid_list[idx] for idx, id in enumerate(id_list)}
 
     dest_pt_dict = make_point_dictionary(rgb_img, marker_dict, long_sides, short_sides)
 
@@ -472,6 +472,9 @@ def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT"):
     elif (rot == 3):
         dst_pts = rotate_list(dest_pt_dict[position]["landscape"], 3)
 
+    # reverse to get correct point order
+    dst_pts.reverse()
+
     # correct image
     corr_img = keystone_correct(rgb_img, src_pts, dst_pts)
     
@@ -487,6 +490,9 @@ def make_point_dictionary(img, marker_dict, long_sides, short_sides):
         ]
     
     marker_arrangements = ["portrait", "landscape"]
+
+    # rotation value
+    rot_val = 1
 
     # Get side lengths
     long_side_lengths = get_lengths(long_sides, marker_dict)
@@ -510,10 +516,10 @@ def make_point_dictionary(img, marker_dict, long_sides, short_sides):
                 
                 if (orientation == "portrait"):
                     working_x_vals = get_points_center(center_x, avg_short_side, x_idx)
-                    working_y_vals = rotate_list(get_points_center(center_y, avg_long_side, y_idx), 1)
+                    working_y_vals = rotate_list(get_points_center(center_y, avg_long_side, y_idx), rot_val)
                 elif (orientation == "landscape"):
                     working_x_vals = get_points_center(center_x, avg_long_side, x_idx)
-                    working_y_vals = rotate_list(get_points_center(center_y, avg_short_side, y_idx), 1)
+                    working_y_vals = rotate_list(get_points_center(center_y, avg_short_side, y_idx), rot_val)
                 working_dict[orientation] = list(zip(working_x_vals, working_y_vals))
 
             point_dict[marker_dest] = working_dict
