@@ -91,7 +91,7 @@ def main():
             st.session_state.dist = dist
 
             st.subheader("Download Calibration Files")
-            mtx_dl_col, dist_dl_col = st.columns(2)
+            mtx_dl_col, dist_dl_col, _, _ = st.columns(4)
 
             with mtx_dl_col:
                 arr_download_button(mtx, button_text="Download MTX File", file_name="image_correction_mtx.npy")
@@ -110,7 +110,7 @@ def main():
 
         mtx_upload_col, dist_upload_col = st.columns(2)
         with mtx_upload_col:
-            user_mtx_upload = st.file_uploader("Upload MTX File", type=["npy"], 
+            user_mtx_upload = st.file_uploader("Upload MTX File", type=["npy"],
                                                accept_multiple_files=False, key="user_mtx_upload")
         with dist_upload_col:
             user_dist_upload = st.file_uploader("Upload DIST File", type=["npy"], 
