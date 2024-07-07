@@ -81,14 +81,18 @@ def main():
                         st.image(annotated_img_arr)
         
             # perform calibration step
-            ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_gray.shape[::-1], None, None)
+            try:
+                ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_gray.shape[::-1], None, None)
+            except:
+                st.error("Error Encountered. Please check that the number of squares matches the dimensions of your checkerboard.")
+                st.stop()
 
             st.session_state.mtx = mtx
             st.session_state.dist = dist
 
+            st.subheader("Download Calibration Files")
             mtx_dl_col, dist_dl_col = st.columns(2)
 
-            st.subheader("Download Calibration Files")
             with mtx_dl_col:
                 arr_download_button(mtx, button_text="Download MTX File", file_name="image_correction_mtx.npy")
             with dist_dl_col:
