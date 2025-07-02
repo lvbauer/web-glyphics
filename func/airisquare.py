@@ -476,7 +476,7 @@ def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT", pad_val=0):
     dst_pts.reverse()
 
     if (pad_val != 0):
-        dst_pts = apply_pad(dst_pts, pad_val, position)
+        dst_pts = apply_auto_pad(dst_pts, pad_val, position)
 
     # correct image
     corr_img = keystone_correct(rgb_img, src_pts, dst_pts)
@@ -545,7 +545,7 @@ def get_centers_array(img):
 
     return center_array
 
-def apply_pad(dst_pts, pad_val, position):
+def apply_auto_pad(dst_pts, pad_val, position):
     
     prefix_suffix_list = position.split("_")
 
