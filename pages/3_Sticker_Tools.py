@@ -151,7 +151,21 @@ def main():
             user_sticker_rotation = st.selectbox("Sticker Rotation", [0,1,2,3], format_func=lambda x: x*90)
             user_sticker_pad = st.number_input("Pad Value", value=0, step=1, help=MARKER_ADJUST_PAD_HELP)
 
-            final_image = asq.asq_adjust_image(img, rot=user_sticker_rotation, position=user_sticker_destination, pad_val=user_sticker_pad)
+            # Custom pad options
+
+            st.write("Custom Padding Options")
+
+            pad_col1, pad_col2 = st.columns(2)
+
+            with pad_col1:
+                user_sticker_vertical_pad = st.number_input("Custom Vertical Pad Value", value=0, step=1, help=MARKER_ADJUST_PAD_HELP)
+
+            with pad_col2:
+                user_sticker_horizontal_pad = st.number_input("Custom Horizontal Pad Value", value=0, step=1, help=MARKER_ADJUST_PAD_HELP)
+
+            final_image = asq.asq_adjust_image(img, rot=user_sticker_rotation, position=user_sticker_destination, 
+                                               pad_val=user_sticker_pad, 
+                                               custom_y_pad=user_sticker_vertical_pad, custom_x_pad=user_sticker_horizontal_pad)
             
             st.subheader("Adjusted Image")
             st.image(final_image)

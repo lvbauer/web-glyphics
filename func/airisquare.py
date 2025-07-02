@@ -442,7 +442,8 @@ def _get_gray_standard(marker_array):
 
     return standard_dict
 
-def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT", pad_val=0):
+def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT", 
+                     pad_val=0, custom_y_pad=0, custom_x_pad=0):
     
 
 
@@ -476,7 +477,10 @@ def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT", pad_val=0):
     dst_pts.reverse()
 
     if (pad_val != 0):
-        dst_pts = apply_auto_pad(dst_pts, pad_val, position)
+        dst_pts = apply_auto_pad(dst_pts, position, pad_val)
+
+    if (custom_x_pad !=0) or (custom_y_pad != 0):
+        dst_pts = apply_custom_pad(dst_pts, x_pad_val=custom_x_pad, y_pad_val=custom_y_pad)
 
     # correct image
     corr_img = keystone_correct(rgb_img, src_pts, dst_pts)
@@ -545,7 +549,7 @@ def get_centers_array(img):
 
     return center_array
 
-def apply_auto_pad(dst_pts, pad_val, position):
+def apply_auto_pad(dst_pts, position, pad_val):
     
     prefix_suffix_list = position.split("_")
 
@@ -574,6 +578,12 @@ def apply_auto_pad(dst_pts, pad_val, position):
 
         return dst_pts
         
+def apply_custom_pad(dst_pts, x_pad_val=0, y_pad_val=0):
+       
+    dst_pts = [(x+x_pad_val, y+y_pad_val) for x, y in dst_pts]
+
+    return dst_pts
+
 
 def get_points_center(center_val, amount, idx):
 
