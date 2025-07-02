@@ -39,6 +39,8 @@ METHOD_SELECT_HELP = """The 'STICKER' method calculates scale from the entire As
 The 'MARKER' method calculates scale based only on the sticker markers
 , which is useful if the Astrobotany is partially covered in the image."""
 
+MARKER_ADJUST_PAD_HELP = "Pad value is the number of pixels offset from the image edge the marker will end up. This is automatically designated based on the Sticker Destination"
+
 # Error case
 def marker_error():
     st.error("Marker not found in image.")
@@ -141,11 +143,14 @@ def main():
             
         elif TOOL_OPTIONS.index(user_function) == 4:
 
+            st.header("Frame Adjust")
+
             # Collect User options
             user_sticker_destination = st.selectbox("Sticker Destination", STICKER_DESTINATION)
             user_sticker_rotation = st.selectbox("Sticker Rotation", [0,1,2,3], format_func=lambda x: x*90)
+            user_sticker_pad = st.number_input("Pad Value", value=0, step=1, help=MARKER_ADJUST_PAD_HELP)
 
-            final_image = asq.asq_adjust_image(img, rot=user_sticker_rotation, position=user_sticker_destination)
+            final_image = asq.asq_adjust_image(img, rot=user_sticker_rotation, position=user_sticker_destination, pad_val=user_sticker_pad)
             
             st.subheader("Adjusted Image")
             st.image(final_image)

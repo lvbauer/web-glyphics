@@ -442,7 +442,7 @@ def _get_gray_standard(marker_array):
 
     return standard_dict
 
-def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT"):
+def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT", pad_val=0):
     
 
 
@@ -474,6 +474,9 @@ def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT"):
 
     # reverse to get correct point order
     dst_pts.reverse()
+
+    if (pad_val != 0):
+        dst_pts = apply_pad(dst_pts, pad_val, position)
 
     # correct image
     corr_img = keystone_correct(rgb_img, src_pts, dst_pts)
@@ -541,6 +544,36 @@ def get_centers_array(img):
     ]
 
     return center_array
+
+def apply_pad(dst_pts, pad_val, position):
+    
+    prefix_suffix_list = position.split("_")
+
+    if (len(prefix_suffix_list) == 1):
+        return dst_pts
+    
+    elif (len(prefix_suffix_list) != 2):
+        raise("Prefix-Suffix List is incorrect length.")
+
+    else:
+        prefix, suffix = prefix_suffix_list
+
+        # handle vertical component
+
+        if (prefix == "TOP"):
+            dst_pts = [(x, y+pad_val) for x, y in dst_pts]
+        elif (prefix == "BOTTOM"):
+            dst_pts = [(x, y-pad_val) for x, y in dst_pts]
+
+        # handle horizontal
+
+        if (suffix == "LEFT"):
+            dst_pts = [(x+pad_val, y) for x, y in dst_pts]
+        elif (suffix == "RIGHT"):
+            dst_pts = [(x-pad_val, y) for x, y in dst_pts]
+
+        return dst_pts
+        
 
 def get_points_center(center_val, amount, idx):
 
