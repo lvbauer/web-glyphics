@@ -39,7 +39,8 @@ METHOD_SELECT_HELP = """The 'STICKER' method calculates scale from the entire As
 The 'MARKER' method calculates scale based only on the sticker markers
 , which is useful if the Astrobotany is partially covered in the image."""
 
-MARKER_ADJUST_PAD_HELP = "Pad value is the number of pixels offset from the image edge the marker will end up. This is automatically designated based on the Sticker Destination"
+MARKER_ADJUST_PAD_HELP = """Pad value is the number of pixels offset from the image edge the marker will end up. 
+This is automatically designated based on the Sticker Destination. If no pad is desired, leave as '0' integer."""
 
 # Error case
 def marker_error():
