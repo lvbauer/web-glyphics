@@ -487,6 +487,30 @@ def asq_adjust_image(rgb_img, rot=0, position="TOP_LEFT",
     
     return corr_img
 
+def asq_custom_adjust_image(rgb_img, destination_points):
+    """
+    Destination points in order: TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT.
+    Destination Point Format: [(x1,y1), (x2,y2), (x3,y3), (x4,y4)]
+    
+    """
+    # TODO make ui/ux for this function
+
+    id_list = [TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT]
+
+    # Get marker centroids and make marker dict
+    marker_pt_list = get_validate_square(rgb_img)
+    marker_centroid_list = get_aruco_points(marker_pt_list)
+    marker_dict = {id : marker_centroid_list[idx] for idx, id in enumerate(id_list)}
+
+    # Prepare source points
+    src_pts = [marker_dict[id] for id in id_list]
+
+    # correct image
+    corr_img = keystone_correct(rgb_img, src_pts, destination_points)
+
+    return corr_img
+
+
 def make_point_dictionary(img, marker_dict, long_sides, short_sides):
 
     # Define corner arrangements
